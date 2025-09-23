@@ -1,5 +1,17 @@
 # A basic mental model of Postgres
 
+## Storage
+
+### Pages
+- tables and indices are stored on disk in pages (8KB) which get put into shared memory, edited, then written out
+
+### WAL
+- Append only log of all insert, updates, delete, create index, etc.
+- Postgres writes changes to the WAL first
+
+
+
+## A SELECT query
 1. The postmaster process listens for TCP connections from clients.
     - https://github.com/postgres/postgres/blob/a48d1ef58652229521ba4b5070e19f857608b22e/src/backend/postmaster/postmaster.c#L1142
 2. A client connects to the postmaster process and the process gets forked. 
@@ -68,3 +80,21 @@ Side note: Postgresql wire format
     - Marks data as done
 
 14. Server sends another ReadyForQuery to start the cycle all over again
+
+## Background Processes
+
+While Postmaster is listening for TCP connections, a few other processes are running.
+
+src/backend/postmaster/
+
+- WAL Writer 
+    - Not an essential process, backends can do everything that this process does
+    - Keeps backends from having to fsync WAL pages
+- Background writer
+    - writes out dirty shared buffers in background in order to mantain enough clean shared buffers. backends will still write to shared buffers if the background writer doesnt keep up
+- Checkpointer
+- Autovacuum
+- WAL sender / WAL receiver
+    - replication
+- Syslogger
+    - logs
